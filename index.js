@@ -28,6 +28,14 @@ async function run() {
 
         const roomCollection = client.db('roomDB').collection('rooms');
 
+        // get 
+        app.get('/rooms', async (req, res) => {
+            // const cursor = roomCollection.find();
+            // const result = await cursor.toArray();
+            const result = await roomCollection.find().toArray();
+            res.send(result);
+        });
+
         // Send a ping to confirm a successful connection
         // await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
