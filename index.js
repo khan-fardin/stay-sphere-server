@@ -84,6 +84,33 @@ async function run() {
             }
         });
 
+        // update book date
+        app.patch('/my-bookings/:id/update-date', async (req, res) => {
+            const id = req.params.id;
+            const { email, newBookingDate } = req.body;
+
+            if (!email || !newBookingDate) {
+                return res.status(400).json({ success: false, message: "Missing email or date." });
+            }
+
+            try {
+                const result = await roomCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    { $set: { "bookingDetails.$[elem].bookingDate": newBookingDate } },
+                    { arrayFilters: [{ "elem.email": email }] }
+                );
+
+                if (result.modifiedCount === 1) {
+                    res.json({ success: true, message: "Booking date updated successfully." });
+                } else {
+                    res.status(404).json({ success: false, message: "Booking not found." });
+                }
+            } catch (error) {
+                console.error("Error updating booking date:", error);
+                res.status(500).json({ success: false, message: "Server error" });
+            }
+        });
+
         // get reviews by date
         app.get("/latest-reviews", async (req, res) => {
             try {
