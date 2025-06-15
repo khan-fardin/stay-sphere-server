@@ -59,6 +59,31 @@ async function run() {
             res.send(result);
         });
 
+        // delete user's booking from a room
+        app.delete("/my-bookings/:id/booking", async (req, res) => {
+            const id = req.params.id;
+            const userEmail = req.query.email;
+
+            if (!userEmail) {
+                return res.status(400).json({ success: false, message: "Email is required." });
+            }
+            try {
+                const result = await roomCollection.updateOne(
+                    { _id: new ObjectId(id) }, // match specific room
+                    { $pull: { bookingDetails: { email: userEmail } } } // remove bookings for that email
+                );
+
+                if (result.modifiedCount === 1) {
+                    res.status(200).json({ success: true, message: "Booking deleted for user in this room." });
+                } else {
+                    res.status(404).json({ success: false, message: "No matching booking found." });
+                }
+            } catch (error) {
+                console.error("Error deleting room booking:", error);
+                res.status(500).json({ success: false, message: "Internal server error" });
+            }
+        });
+
         // get reviews by date
         app.get("/latest-reviews", async (req, res) => {
             try {
