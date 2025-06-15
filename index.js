@@ -27,8 +27,9 @@ async function run() {
         // await client.connect();
 
         const roomCollection = client.db('roomDB').collection('rooms');
+        const bookedRoomCollection = client.db('roomDB').collection('bookedRooms');
 
-        // get 
+        // get all rooms
         app.get('/rooms', async (req, res) => {
             // const cursor = roomCollection.find();
             // const result = await cursor.toArray();
@@ -36,13 +37,84 @@ async function run() {
             res.send(result);
         });
 
-        // get individually
+        // get room individually
         app.get('/rooms/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) }
             const result = await roomCollection.findOne(query);
             res.send(result);
-        })
+        });
+
+        // get my booked rooms
+        app.get("/my-bookings", async (req, res) => {
+            const userEmail = req.query.email;
+            if (!userEmail) {
+                return res.status(400).json({ error: "Email query parameter is required" });
+            }
+            const result = await roomCollection.find({
+                bookingDetails: {
+                    $elemMatch: { email: userEmail }
+                }
+            }).toArray();
+            res.send(result);
+        });
+
+        // get reviews by date
+        app.get("/latest-reviews", async (req, res) => {
+            try {
+                const latestReviews = await roomCollection.aggregate([
+                    // Step 1: Flatten the reviews array
+                    { $unwind: "$bookingDetails" },
+                    // Step 2: Shape each result document
+                    {
+                        $project: {
+                            _id: 0,                      // exclude MongoDB ID
+                            roomId: "$_id",              // original room ID
+                            roomName: "$name",           // assuming rooms have a name field
+                            user: "$bookingDetails.name",       // review fields
+                            rating: "$bookingDetails.rating",
+                            comment: "$bookingDetails.comment",
+                            date: "$bookingDetails.commentDate"
+                        }
+                    },
+                    // Step 3: Sort reviews by date descending
+                    { $sort: { date: -1 } },
+                    // Step 4: Limit to top 10
+                    { $limit: 10 }
+                ]).toArray();
+                res.json(latestReviews);
+            } catch (error) {
+                console.error("Failed to get latest reviews:", error);
+                res.status(500).json({ error: "Internal Server Error" });
+            }
+        });
+
+        // add booking detail to room 
+        app.patch("/rooms/:id", async (req, res) => {
+            const { id } = req.params;
+            const booking = req.body;
+
+            try {
+                const result = await roomCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    {
+                        $push: {
+                            bookingDetails: booking
+                        }
+                    }
+                );
+                if (result.modifiedCount === 1) {
+                    res.status(200).json({ success: true, message: "Room booked successfully." });
+                } else {
+                    res.status(404).json({ success: false, message: "Room not found." });
+                }
+            } catch (err) {
+                console.error("Error booking room:", err);
+                res.status(500).json({ success: false, message: "Internal server error." });
+            }
+        });
+
+
 
         // Send a ping to confirm a successful connection
         // await client.db("admin").command({ ping: 1 });
@@ -55,9 +127,9 @@ async function run() {
 run().catch(console.dir);
 
 app.get('/', (req, res) => {
-  res.send('Bhang Bhosda World!')
+    res.send('Bhang Bhosda World!')
 })
 
 app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
+    console.log(`Example app listening on port ${port}`)
 })
