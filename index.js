@@ -111,6 +111,33 @@ async function run() {
             }
         });
 
+        // add a review by user 
+        app.patch('/reviews/:id', async (req, res) => {
+            const id = req.params.id;
+            const { email, rating, comment, commentDate } = req.body;
+            try {
+                const result = await roomCollection.updateOne(
+                    { _id: new ObjectId(id), "bookingDetails.email": email },
+                    {
+                        $set: {
+                            "bookingDetails.$.rating": rating,
+                            "bookingDetails.$.comment": comment,
+                            "bookingDetails.$.commentDate": commentDate
+                        }
+                    }
+                );
+                if (result.modifiedCount === 1) {
+                    res.json({ success: true });
+                } else {
+                    res.status(404).json({ success: false, message: "Booking not found or already reviewed." });
+                }
+            } catch (err) {
+                console.error("Review update error:", err);
+                res.status(500).json({ success: false, message: "Server error." });
+            }
+        });
+
+
         // get reviews by date
         app.get("/latest-reviews", async (req, res) => {
             try {
