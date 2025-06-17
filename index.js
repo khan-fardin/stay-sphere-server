@@ -21,6 +21,36 @@ const client = new MongoClient(uri, {
     }
 });
 
+// firebase admin for jwt
+var admin = require("firebase-admin");
+
+const decoded = Buffer.from(process.env.FireBaseKey, 'base64').toString('utf8');
+var serviceAccount = JSON.parse(decoded);
+
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+});
+
+// middleware to verify access token comes from clint side
+const verifyFireBaseToken = async (req, res, next) => {
+    const authHeader = req.headers?.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).send({ message: 'unauthorized access!' });
+    };
+
+    const token = authHeader.split(' ')[1];
+
+    try {
+        const decoded = await admin.auth().verifyIdToken(token);
+        req.decoded = decoded;
+        next();
+    }
+    catch (error) {
+        return res.status(401).send({ message: 'unauthorized access!' });
+    }
+};
+
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
@@ -38,7 +68,8 @@ async function run() {
         });
 
         // get room individually
-        app.get('/rooms/:id', async (req, res) => {
+        app.get('/rooms/:id', verifyFireBaseToken, async (req, res) => {
+            const userEmail = req.decoded.email;
             const id = req.params.id;
             const query = { _id: new ObjectId(id) }
             const result = await roomCollection.findOne(query);
@@ -46,8 +77,11 @@ async function run() {
         });
 
         // get my booked rooms
-        app.get("/my-bookings", async (req, res) => {
+        app.get("/my-bookings", verifyFireBaseToken, async (req, res) => {
             const userEmail = req.query.email;
+            if (userEmail !== req.decoded.email) {
+                return res.status(403).send({ message: 'forbidden access!' });
+            };
             if (!userEmail) {
                 return res.status(400).json({ error: "Email query parameter is required" });
             }
@@ -169,9 +203,10 @@ async function run() {
         });
 
         // add booking detail to room 
-        app.patch("/rooms/:id", async (req, res) => {
+        app.patch("/rooms/:id", verifyFireBaseToken, async (req, res) => {
             const { id } = req.params;
-            const booking = req.body;
+            
+            const booking = req.body 
 
             try {
                 const result = await roomCollection.updateOne(
@@ -197,7 +232,7 @@ async function run() {
 
         // Send a ping to confirm a successful connection
         // await client.db("admin").command({ ping: 1 });
-        console.log("Pinged your deployment. You successfully connected to MongoDB!");
+        // console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
         // Ensures that the client will close when you finish/error
         // await client.close();
@@ -206,7 +241,7 @@ async function run() {
 run().catch(console.dir);
 
 app.get('/', (req, res) => {
-    res.send('Bhang Bhosda World!')
+    res.send('Hello Stay Sphere Server World!')
 })
 
 app.listen(port, () => {
