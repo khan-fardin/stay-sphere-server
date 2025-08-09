@@ -69,7 +69,7 @@ async function run() {
 
         // get room individually
         app.get('/rooms/:id', async (req, res) => {
-            const userEmail = req.decoded.email;
+            // const userEmail = req.decoded.email;
             const id = req.params.id;
             const query = { _id: new ObjectId(id) }
             const result = await roomCollection.findOne(query);
