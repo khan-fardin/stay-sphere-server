@@ -68,7 +68,7 @@ async function run() {
         });
 
         // get room individually
-        app.get('/rooms/:id', verifyFireBaseToken, async (req, res) => {
+        app.get('/rooms/:id', async (req, res) => {
             const userEmail = req.decoded.email;
             const id = req.params.id;
             const query = { _id: new ObjectId(id) }
