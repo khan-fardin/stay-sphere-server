@@ -1,5 +1,4 @@
-
-# 🖥️ Stay Sphere Server - Backend for Room Booking App
+### 🖥️ Stay Sphere Server - Backend for Room Booking App
 
 This is the backend server for the **Stay Sphere** room booking application. It provides RESTful APIs to handle room data, bookings, user filtering, and other operations.
 
