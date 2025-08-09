@@ -4,8 +4,7 @@ This is the backend server for the **Stay Sphere** room booking application. It 
 
 ---
 
-## 🌐 Live Server URL > 🔗 https://stay-sphere-server-ashen.vercel.app/
-## 🌐 GitHub site URL > 🔗 https://github.com/Programming-Hero-Web-Course4/b11a11-server-side-khan-fardin
+## 🌐 Live Server > 🔗 [Visit Live Server](https://stay-sphere-server-ashen.vercel.app)
 
 ---
 
