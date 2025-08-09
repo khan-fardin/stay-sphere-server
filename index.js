@@ -77,7 +77,7 @@ async function run() {
         });
 
         // get my booked rooms
-        app.get("/my-bookings", verifyFireBaseToken, async (req, res) => {
+        app.get("/my-bookings", async (req, res) => {
             const userEmail = req.query.email;
             if (userEmail !== req.decoded.email) {
                 return res.status(403).send({ message: 'forbidden access!' });
